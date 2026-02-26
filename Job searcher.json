@@ -1,0 +1,1337 @@
+{
+  "name": "Job searcher",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        240,
+        192
+      ],
+      "id": "567af1ab-9002-4711-b259-ed0538fa2a85",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1072,
+        256
+      ],
+      "id": "540bc093-4fef-4d0f-ad9c-4d552f82a958",
+      "name": "Wait",
+      "webhookId": "f47091db-2c32-49d0-832b-34f34ac61b38"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d9c0f2c6-069c-4af4-89ea-c2ecd554932b",
+              "leftValue": "={{ $json.data.approved }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "ignoreCase": true
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2128,
+        432
+      ],
+      "id": "126e90a9-98de-40f0-9b7c-077247c7d7c0",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"resume_make\": \"False\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2288,
+        336
+      ],
+      "id": "be35071d-bf5f-4989-b1d2-22ea61949760",
+      "name": "Add false"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"resume_make\": \"True\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2288,
+        160
+      ],
+      "id": "c6ab6aa4-c179-4659-8d1b-3fd781311f25",
+      "name": "Add True"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        -80
+      ],
+      "id": "e0ae2816-f2cf-4a35-899a-94afae2c0803",
+      "name": "Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search.json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "engine",
+              "value": "google_jobs"
+            },
+            {
+              "name": "q",
+              "value": "Machine Learning Canada"
+            },
+            {
+              "name": "location",
+              "value": "canada"
+            },
+            {
+              "name": "gl",
+              "value": "ca"
+            },
+            {
+              "name": "chips",
+              "value": "date_posted:today"
+            },
+            {
+              "name": "api_key",
+              "value": "={{ $env.SerpAPIKey }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        -80
+      ],
+      "id": "487b057f-0143-495f-825d-28bb9d647c80",
+      "name": "SerpAPI call"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "jobs_results",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        416,
+        -80
+      ],
+      "id": "ac651114-57bd-48ff-a701-f72e765831f1",
+      "name": "isolate search results"
+    },
+    {
+      "parameters": {
+        "fileSelector": "/files/resume.txt",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        576,
+        208
+      ],
+      "id": "7c87f75b-846b-488a-8df8-9fcd519e0693",
+      "name": "Read resume content from disk"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        880,
+        64
+      ],
+      "id": "36459c71-d8b3-4a22-9718-a2e200bca007",
+      "name": "Merge Job Role and resume"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a Senior Technical Recruiter specializing in identifying high-potential \"hybrid\" candidates. You are evaluating a candidate with a background in both Mechanical Engineering and Computer Science for a specific technical role.\n\nYour Goal: Provide a compatibility score (0-100) based strictly on how well the candidate's skills and projects align with the Job Description (JD).\n\nEvaluation Rules:\n\nIgnore Irrelevant Content: Do NOT lower the score because the candidate has experience in Thermodynamics or Powertrain design. Simply skip sections that don't apply to the JD.\n\nValue Transferable Logic: If the JD requires \"Data Analysis,\" \"Problem Solving,\" or \"Root Cause Analysis,\" treat the candidate's mechanical analytics experience (e.g., FMEA, Reliability Modeling) as strong evidence of these competencies.\n\nFocus on Tech Stack: Prioritize matches in the \"Skills\" and \"Projects\" sections (Python, SQL, AWS, ML pipelines).\n\nIgnore Metadata: Do not penalize the candidate for resume length, formatting, or the presence of LaTeX code.\n\nBe Harsh but Fair: A score of 90+ means they have almost every required skill. A score of 70 means they have the core logic but might need to learn a specific framework.\n\nOutput Format (JSON ONLY):\n{\n\"score\": number,\n\"verdict\": \"High\" | \"Medium\" | \"Low\",\n\"key_matches\": [\"skill/project 1\", \"skill/project 2\"],\n\"missing_critical_skills\": [\"missing 1\", \"missing 2\"],\n\"reasoning\": \"One sentence explaining why the score was given, highlighting transferable engineering strengths.\"\n}",
+              "role": "model"
+            },
+            {
+              "content": "=Job Description: > {{ $json.description }}\n\nCandidate Resume: > {{ $json.text }}"
+            }
+          ]
+        },
+        "simplify": false,
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        1024,
+        0
+      ],
+      "id": "1de70cdd-1f47-4036-93bf-997ba22d6ed5",
+      "name": "The Judge",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "xMe5rnoIkcgji57d",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "candidates[0].content.parts[0].text",
+        "options": {
+          "destinationFieldName": "Judgement"
+        }
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1408,
+        0
+      ],
+      "id": "e089bab6-82f7-49af-a8fd-a8ed3d43c872",
+      "name": "isolate judgement from logs"
+    },
+    {
+      "parameters": {
+        "fileSelector": "/files/resume.tex",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        1600,
+        -144
+      ],
+      "id": "135035ad-1977-4b6d-8d61-9bd52f47bf20",
+      "name": "Read LaTeX master resume file"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "destinationKey": "latex",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        1792,
+        -144
+      ],
+      "id": "3c765d1a-f4cf-425f-997a-b7a8cac5c9e4",
+      "name": "convert to JSON"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "destinationKey": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        752,
+        208
+      ],
+      "id": "22515e19-62ae-40a0-8434-cb3a2ae46b5b",
+      "name": "convert text to JSON"
+    },
+    {
+      "parameters": {
+        "jsCode": "const judgementString = $input.first().json.Judgement;\n\n// 2. Use Regex to extract only the content between the ```json and ``` blocks\n// The /s flag (dotAll) allows the dot to match newlines\nconst jsonMatch = judgementString.match(/```json\\s+([\\s\\S]*?)\\s+```/);\n\nif (jsonMatch) {\n    const cleanJsonString = jsonMatch[1];\n    \n    // 3. Parse the cleaned string into a JavaScript Object\n    const finalData = JSON.parse(cleanJsonString);\n\n    return finalData\n} else {\n    console.error(\"Could not find a valid JSON block in the string.\");\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        208
+      ],
+      "id": "b7fa37eb-ca78-4334-8846-c82499d925d5",
+      "name": "Convert String to JSON"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.score }}",
+                    "rightValue": 75,
+                    "operator": {
+                      "type": "number",
+                      "operation": "gte"
+                    },
+                    "id": "16c70f1a-544c-49ea-927f-b8df2de4c92a"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "6007aaf9-4424-4224-8f67-2107a7971a9d",
+                    "leftValue": "={{ $json.score }}",
+                    "rightValue": 50,
+                    "operator": {
+                      "type": "number",
+                      "operation": "lte"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c83d88ad-f39e-4a87-bc6b-13dc459036c3",
+                    "leftValue": "={{ $json.score }}",
+                    "rightValue": 50,
+                    "operator": {
+                      "type": "number",
+                      "operation": "gt"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1760,
+        352
+      ],
+      "id": "2d80ee5d-1d8e-402d-89f4-ff2e91c903a0",
+      "name": "Switch: seperate into high, medium, low"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendAndWait",
+        "guildId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.discordServerId }}"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $env.discordChannelURL }}",
+          "mode": "list",
+          "cachedResultName": "general",
+          "cachedResultUrl": "={{ $env.discordChannelURL }}"
+        },
+        "message": "=Please review and approve @everyone\n\n{{ $json.score }}\n{{ $json.verdict }}\n{{ $json.apply_options[0].link }}",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double"
+          }
+        },
+        "options": {
+          "limitWaitTime": {
+            "values": {
+              "resumeAmount": 5,
+              "resumeUnit": "minutes"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1840,
+        656
+      ],
+      "id": "55700862-0ee8-4cb4-8495-89c803da559c",
+      "name": "Send message on discord for approval",
+      "webhookId": "4e08df90-452e-4f48-8a97-9b14a94e6eff",
+      "credentials": {
+        "discordBotApi": {
+          "id": "ldjku3ZxY01Dt94m",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1648,
+        656
+      ],
+      "id": "7eca10aa-4910-45ff-b2dd-6665394fb027",
+      "name": "Merge judgement with the job description"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1984,
+        432
+      ],
+      "id": "e4b5fba8-1feb-470e-b087-eea9647a3a7e",
+      "name": "Merge approval with judgement"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 4,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2464,
+        32
+      ],
+      "id": "d670b637-aab6-4a8a-baa5-4a467e5a913c",
+      "name": "Combine data for editor"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3dc1a09b-2fa1-4edf-9ac0-d44c1637c62d",
+              "leftValue": "={{ $json.resume_make }}",
+              "rightValue": "=True",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2656,
+        64
+      ],
+      "id": "afd22552-551f-4acb-b4ea-7764700320f7",
+      "name": "separate resume's to be made"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.sheetsID }}",
+          "mode": "list",
+          "cachedResultName": "={{ $env.sheetsName }}",
+          "cachedResultUrl": "={{ $env.sheetsURL }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 803008135,
+          "mode": "list",
+          "cachedResultName": "Resume not made",
+          "cachedResultUrl": "={{ $env.sheetsURL }}#gid=803008135"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Title": "={{ $json.title }}",
+            "Company": "={{ $json.company_name }}",
+            "Location": "={{ $json.location }}",
+            "Link": "={{ $json.apply_options[0].link }}",
+            "score": "={{ $json.score }}",
+            "verdict": "={{ $json.verdict }}",
+            "matches": "={{ $json.key_matches }}",
+            "faults": "={{ $json.missing_critical_skills }}",
+            "reasoning": "={{ $json.reasoning }}",
+            "apply link": "={{ $json.apply_options }}",
+            "description": "={{ $json.description }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Link",
+              "displayName": "Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "verdict",
+              "displayName": "verdict",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "matches",
+              "displayName": "matches",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "faults",
+              "displayName": "faults",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reasoning",
+              "displayName": "reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "apply link",
+              "displayName": "apply link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2896,
+        400
+      ],
+      "id": "6d88e27b-c5ef-47da-81e8-af459f3e652d",
+      "name": "Add unfit roles to sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "zR6EmRGkv1c4Q6Hs",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Role: You are a LaTeX Resume Expert and Career Consultant.\n\nTask: Optimize my LaTeX resume based on the provided \"Description\" and \"Judgement\" JSON feedback.\n\nStrict Rules for Editing:\n\nProfessional Summary: Rewrite this section to align with the \"Key Matches\" and \"Reasoning\" provided in the JSON.\n\nSkills Section: - Reorder the skills to prioritize those listed in \"Key Matches\" (e.g., Python, SQL, AWS, RAG).\n\nAdd any skills to the list that appear in my experience bullet points but were missing from the Skills section.\n\nExperience Bullet Points: - Reorder bullet points within each job to put the most relevant ones (based on the \"Key Matches\") at the top.\n\nRemove bullet points that are irrelevant to the judge's criteria, but do not edit the wording of the remaining points.\n\nProjects Section:\n\nReduce the total number of projects from 6 down to the 2-3 most relevant projects based on the \"Key Matches\" (e.g., prioritize the AWS Race Visualizer or DalVacation Home if they match the \"Full-stack\" or \"Cloud\" requirements).\n\nReorder the bullet points within those projects for maximum impact, but do not edit the wording.\n\nFormatting: Remove all comments, Maintain the exact LaTeX structure, packages, and custom commands (e.g., \\resumeItem, \\resumeSubheading). Ensure the document compiles perfectly.",
+              "role": "model"
+            },
+            {
+              "content": "=Job Descript: {{ $json.description }}\nJudge's score: {{ $json.score }}\nkey_matches: {{ $json.key_matches }}\nmissing_skills: {{ $json.missing_critical_skills }}\nCurrent LaTeX Code: {{ $json.latex }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        2976,
+        160
+      ],
+      "id": "e87f0031-6f0e-4446-8c28-f0bc26f9a720",
+      "name": "editor",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "xMe5rnoIkcgji57d",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "content.parts[0].text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        3264,
+        160
+      ],
+      "id": "bda8eff0-a9da-47d6-8463-c6a5c9520c7b",
+      "name": "isolate edited LaTeX code"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        3456,
+        48
+      ],
+      "id": "56e0deca-a834-433b-9441-12278ac59830",
+      "name": "Merge with other data for logs"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "['content.parts[0].text']",
+        "options": {
+          "fileName": "={{ $json.title }}_{{ $json.company_name }}"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        3504,
+        240
+      ],
+      "id": "f6dc941c-8ce5-4360-839b-c74d9f54b2c7",
+      "name": "Convert resume text to file"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/files/{{ $binary.data.fileName}}/{{ $binary.data.fileName }}.{{ $binary.data.fileExtension }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        3744,
+        240
+      ],
+      "id": "eeb21aa6-197a-4f56-a974-078780559b36",
+      "name": "Write resume to disk"
+    },
+    {
+      "parameters": {
+        "jsCode": "const fs = require('fs');\nconst folderPath = `/files/${$input.first().binary.data.fileName}`;\n\nif (!fs.existsSync(folderPath)) {\n    fs.mkdirSync(folderPath, { recursive: true });\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3744,
+        48
+      ],
+      "id": "9c906c83-dba6-4941-b241-9e51026d59e3",
+      "name": "Create directory for the role"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.sheetsID }}",
+          "mode": "list",
+          "cachedResultName": "={{ $env.sheetsName }}",
+          "cachedResultUrl": "={{ $env.sheetsURL }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Resume made",
+          "cachedResultUrl": "={{ $env.sheetsResumeMade }}#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Title": "={{ $json.title }}",
+            "Company": "={{ $json.company_name }}",
+            "Link": "={{ $json.apply_options[0].link }}",
+            "Location": "={{ $json.location }}",
+            "score": "={{ $json.score }}",
+            "verdict": "={{ $json.verdict }}",
+            "matches": "={{ $json.key_matches }}",
+            "faults": "={{ $json.missing_critical_skills }}",
+            "reasoning": "={{ $json.reasoning }}",
+            "apply link": "={{ $json.apply_options }}",
+            "resume_name": "={{ $json.title }}_{{ $json.company_name }}",
+            "description": "={{ $json.description }}"
+          },
+          "matchingColumns": [
+            "Title"
+          ],
+          "schema": [
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "resume_name",
+              "displayName": "resume_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Link",
+              "displayName": "Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "verdict",
+              "displayName": "verdict",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "matches",
+              "displayName": "matches",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "faults",
+              "displayName": "faults",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reasoning",
+              "displayName": "reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "apply link",
+              "displayName": "apply link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3744,
+        -112
+      ],
+      "id": "3faa0094-0ef6-4ed9-9d25-e5497de3ebfc",
+      "name": "Log in sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "zR6EmRGkv1c4Q6Hs",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Merge Job Role and resume",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read resume content from disk",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Combine data for editor",
+            "type": "main",
+            "index": 2
+          },
+          {
+            "node": "Merge judgement with the job description",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Add True",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add false",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add false": {
+      "main": [
+        [
+          {
+            "node": "Combine data for editor",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Add True": {
+      "main": [
+        [
+          {
+            "node": "Combine data for editor",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Trigger": {
+      "main": [
+        [
+          {
+            "node": "SerpAPI call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI call": {
+      "main": [
+        [
+          {
+            "node": "isolate search results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "isolate search results": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read resume content from disk": {
+      "main": [
+        [
+          {
+            "node": "convert text to JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Job Role and resume": {
+      "main": [
+        [
+          {
+            "node": "The Judge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "The Judge": {
+      "main": [
+        [
+          {
+            "node": "isolate judgement from logs",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "isolate judgement from logs": {
+      "main": [
+        [
+          {
+            "node": "Convert String to JSON",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read LaTeX master resume file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read LaTeX master resume file": {
+      "main": [
+        [
+          {
+            "node": "convert to JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "convert to JSON": {
+      "main": [
+        [
+          {
+            "node": "Combine data for editor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "convert text to JSON": {
+      "main": [
+        [
+          {
+            "node": "Merge Job Role and resume",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Convert String to JSON": {
+      "main": [
+        [
+          {
+            "node": "Switch: seperate into high, medium, low",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Combine data for editor",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Switch: seperate into high, medium, low": {
+      "main": [
+        [
+          {
+            "node": "Add True",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add false",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge judgement with the job description",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge approval with judgement",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message on discord for approval": {
+      "main": [
+        [
+          {
+            "node": "Merge approval with judgement",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge judgement with the job description": {
+      "main": [
+        [
+          {
+            "node": "Send message on discord for approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge approval with judgement": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine data for editor": {
+      "main": [
+        [
+          {
+            "node": "separate resume's to be made",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "separate resume's to be made": {
+      "main": [
+        [
+          {
+            "node": "Merge with other data for logs",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "editor",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add unfit roles to sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "editor": {
+      "main": [
+        [
+          {
+            "node": "isolate edited LaTeX code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "isolate edited LaTeX code": {
+      "main": [
+        [
+          {
+            "node": "Merge with other data for logs",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge with other data for logs": {
+      "main": [
+        [
+          {
+            "node": "Convert resume text to file",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log in sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert resume text to file": {
+      "main": [
+        [
+          {
+            "node": "Write resume to disk",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create directory for the role",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "1add185c-ff84-41ec-b272-21ea9dd1ffdc",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c4bf234cf4507cbb1d0b8a1a1c8530cb2b68c045f5e2470045e23b0201b2b7c5"
+  },
+  "id": "nbCmKPLpGr9yVxgS",
+  "tags": []
+}
