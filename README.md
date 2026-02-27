@@ -41,7 +41,7 @@ Once a role is approved, **The Editor** ingests the raw LaTeX code of your maste
 ### 5. Operational Persistence
 Every run is documented in a centralized **Google Sheets** ledger, recording the reasoning, fit score, and the specific location of the generated resume on the host machine.
 
-![Alt text](images\n8n_workflow.png) 
+![Alt text](.\images\n8n_workflow.png) 
 
 ---
 
