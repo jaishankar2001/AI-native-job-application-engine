@@ -1,5 +1,5 @@
 {
-  "name": "Job searcher",
+  "name": "Cortana",
   "nodes": [
     {
       "parameters": {
@@ -200,7 +200,7 @@
         "messages": {
           "values": [
             {
-              "content": "=You are a Senior Technical Recruiter specializing in identifying high-potential \"hybrid\" candidates. You are evaluating a candidate with a background in both Mechanical Engineering and Computer Science for a specific technical role.\n\nYour Goal: Provide a compatibility score (0-100) based strictly on how well the candidate's skills and projects align with the Job Description (JD).\n\nEvaluation Rules:\n\nIgnore Irrelevant Content: Do NOT lower the score because the candidate has experience in Thermodynamics or Powertrain design. Simply skip sections that don't apply to the JD.\n\nValue Transferable Logic: If the JD requires \"Data Analysis,\" \"Problem Solving,\" or \"Root Cause Analysis,\" treat the candidate's mechanical analytics experience (e.g., FMEA, Reliability Modeling) as strong evidence of these competencies.\n\nFocus on Tech Stack: Prioritize matches in the \"Skills\" and \"Projects\" sections (Python, SQL, AWS, ML pipelines).\n\nIgnore Metadata: Do not penalize the candidate for resume length, formatting, or the presence of LaTeX code.\n\nBe Harsh but Fair: A score of 90+ means they have almost every required skill. A score of 70 means they have the core logic but might need to learn a specific framework.\n\nOutput Format (JSON ONLY):\n{\n\"score\": number,\n\"verdict\": \"High\" | \"Medium\" | \"Low\",\n\"key_matches\": [\"skill/project 1\", \"skill/project 2\"],\n\"missing_critical_skills\": [\"missing 1\", \"missing 2\"],\n\"reasoning\": \"One sentence explaining why the score was given, highlighting transferable engineering strengths.\"\n}",
+              "content": "=You are a Senior Technical Recruiter specializing in identifying high-potential candidates. You are evaluating a candidate with a background in both Mechanical Engineering and Computer Science for a specific technical role.\n\nYour Goal: Provide a compatibility score (0-100) based strictly on how well the candidate's skills and projects align with the Job Description (JD).\n\nEvaluation Rules:\n\nIgnore Irrelevant Content: Do NOT lower the score because the candidate has experience in Thermodynamics or Powertrain design. Simply skip sections that don't apply to the JD. Do consider years of experience as an important category.\n\nValue Transferable Logic: If the JD requires \"Data Analysis,\" \"Problem Solving,\" or \"Root Cause Analysis,\" treat the candidate's mechanical analytics experience (e.g., FMEA, Reliability Modeling) as strong evidence of these competencies.\n\nFocus on Tech Stack: Prioritize matches in the \"Skills\" and \"Projects\" sections (Python, SQL, AWS, ML pipelines).\n\nIgnore Metadata: Do not penalize the candidate for resume length, formatting, or the presence of LaTeX code.\n\nBe Harsh but Fair: A score of 90+ means they have almost every required skill. A score of 70 means they have the core logic but might need to learn a specific framework.\n\nOutput Format (JSON ONLY):\n{\n\"score\": number,\n\"verdict\": \"High\" | \"Medium\" | \"Low\",\n\"key_matches\": [\"skill/project 1\", \"skill/project 2\"],\n\"missing_critical_skills\": [\"missing 1\", \"missing 2\"],\n\"reasoning\": \"One sentence explaining why the score was given, highlighting transferable engineering strengths.\"\n}",
               "role": "model"
             },
             {
@@ -222,8 +222,8 @@
       "name": "The Judge",
       "credentials": {
         "googlePalmApi": {
-          "id": "xMe5rnoIkcgji57d",
-          "name": "Google Gemini(PaLM) Api account"
+          "id": "rXXtIbwsDt852zxz",
+          "name": "account2"
         }
       }
     },
@@ -399,7 +399,7 @@
           "cachedResultName": "general",
           "cachedResultUrl": "={{ $env.discordChannelURL }}"
         },
-        "message": "=Please review and approve @everyone\n\n{{ $json.score }}\n{{ $json.verdict }}\n{{ $json.apply_options[0].link }}",
+        "message": "=Please review and approve @everyone\n\nScore: {{ $json.score }}\nVerdict: {{ $json.verdict }}\nReasoning: {{ $json.reasoning }}\nLink: {{ $json.apply_options[0].link }}",
         "approvalOptions": {
           "values": {
             "approvalType": "double"
@@ -651,7 +651,7 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        2896,
+        2960,
         400
       ],
       "id": "6d88e27b-c5ef-47da-81e8-af459f3e652d",
@@ -695,8 +695,8 @@
       "name": "editor",
       "credentials": {
         "googlePalmApi": {
-          "id": "xMe5rnoIkcgji57d",
-          "name": "Google Gemini(PaLM) Api account"
+          "id": "rXXtIbwsDt852zxz",
+          "name": "account2"
         }
       }
     },
@@ -749,7 +749,7 @@
     {
       "parameters": {
         "operation": "write",
-        "fileName": "=/files/{{ $binary.data.fileName}}/{{ $binary.data.fileName }}.{{ $binary.data.fileExtension }}",
+        "fileName": "=/files/{{ $binary.data.fileName.split(\"_\")[1]}}/{{ $binary.data.fileName }}.{{ $binary.data.fileExtension }}",
         "options": {}
       },
       "type": "n8n-nodes-base.readWriteFile",
@@ -763,7 +763,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const fs = require('fs');\nconst folderPath = `/files/${$input.first().binary.data.fileName}`;\n\nif (!fs.existsSync(folderPath)) {\n    fs.mkdirSync(folderPath, { recursive: true });\n}\n\nreturn $input.all();"
+        "jsCode": "const fs = require('fs');\nconst folderPath = `/files/${$input.first().binary.data.fileName.split(\"_\")[1]}`;\n\nif (!fs.existsSync(folderPath)) {\n    fs.mkdirSync(folderPath, { recursive: true });\n}\n\nreturn $input.all();"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -804,7 +804,7 @@
             "faults": "={{ $json.missing_critical_skills }}",
             "reasoning": "={{ $json.reasoning }}",
             "apply link": "={{ $json.apply_options }}",
-            "resume_name": "={{ $json.title }}_{{ $json.company_name }}",
+            "resume_name": "=\\{{ $json.company_name }}\\{{ $json.title }}_{{ $json.company_name }}",
             "description": "={{ $json.description }}"
           },
           "matchingColumns": [
@@ -1327,7 +1327,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "1add185c-ff84-41ec-b272-21ea9dd1ffdc",
+  "versionId": "79e4369e-51ce-44ef-a950-d7837283113a",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "c4bf234cf4507cbb1d0b8a1a1c8530cb2b68c045f5e2470045e23b0201b2b7c5"

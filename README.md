@@ -60,3 +60,7 @@ sheetsID=your_google_sheets_spreadsheet_id
 ```
 docker compose up -d
 ```
+1) open http://localhost:5678 on your browser
+2) login to your account
+3) create a new workflow and upload cortana.json
+4) create credentials and upload your API keys
