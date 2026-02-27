@@ -1,4 +1,4 @@
-![Alt text](.\images\logo.jpg) 
+![Alt text](images/logo.jpg) 
 # Cortana: The AI-Native Career Logistics Engine
 
 **Cortana** is a fully autonomous, containerized recruitment pipeline designed to rebuild the legacy job search from the ground up. Instead of manual keyword-stuffing and endless scrolling, Cortana uses a multi-model AI orchestration layer to scrape the market, judge technical compatibility with "Engineering Intuition," and forge tailored LaTeX resumes—all while keeping the human "Commander" in control via Discord.
@@ -41,7 +41,7 @@ Once a role is approved, **The Editor** ingests the raw LaTeX code of your maste
 ### 5. Operational Persistence
 Every run is documented in a centralized **Google Sheets** ledger, recording the reasoning, fit score, and the specific location of the generated resume on the host machine.
 
-![Alt text](.\images\n8n_workflow.png) 
+![Alt text](images/n8n_workflow.png) 
 
 ---
 
