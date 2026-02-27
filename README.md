@@ -17,7 +17,6 @@
 ---
 
 ## 🏗 System Architecture
-
 ### 1. Data Gathering (Scouting)
 The workflow initiates via a manual trigger, firing a high-precision request to **SerpAPI**. It scans for specific roles (e.g., "Machine Learning Engineer") across targeted regions. The raw JSON results are ingested and handled via a **Split-In-Batches** loop ("Loop Over Items") to ensure sequential processing and rate-limit compliance.
 
