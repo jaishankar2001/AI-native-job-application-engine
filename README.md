@@ -1,5 +1,5 @@
 ![Alt text](images/logo.jpg) 
-# Cortana: The AI-Native Career Logistics Engine
+# Cortana: The AI-Native Job Application Assistant
 
 **Cortana** is a fully autonomous, containerized recruitment pipeline designed to rebuild the legacy job search from the ground up. Instead of manual keyword-stuffing and endless scrolling, Cortana uses a multi-model AI orchestration layer to scrape the market, judge technical compatibility with "Engineering Intuition," and forge tailored LaTeX resumes—all while keeping the human "Commander" in control via Discord.
 
